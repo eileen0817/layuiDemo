@@ -1,0 +1,289 @@
+<title>角色管理</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">系统管理</a>
+        <a><cite>角色管理</cite></a>
+    </div>
+</div>
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">角色数据操作</div>
+
+                <div class="layui-card-body">
+                    <form class="layui-form search-area">
+                        <div class="layui-form-item">
+                            <div class="layui-inline">
+                                <label class="layui-form-label">角色名称</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="role_name" autocomplete="off"
+                                           placeholder="请输入角色名称"
+                                           class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-inline">
+                                <label class="layui-form-label">角色编码</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="role_code" autocomplete="off"
+                                           placeholder="请输入角色编码"
+                                           class="layui-input">
+                                </div>
+                            </div>
+                            <input type="hidden" name="page_size" value="5">
+                            <input type="hidden" name="page_num" value="1">
+                            <button class="layui-btn" lay-submit="" lay-filter="search">搜索</button>
+                        </div>
+                    </form>
+                    <div class="layui-btn-group test-table-operate-btn">
+                        <button id="add_role_btn" class="layui-btn" data-method="addNewRole">新增</button>
+                    </div>
+                    <table class="layui-table" id="role_table">
+
+                    </table>
+                    <div>
+                        <div id="page_role" class="page-con"></div>
+                        共<span id="role_count"></span>条结果
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script type="text/html" id="roleList">
+    <colgroup>
+        <col width="20%">
+        <col width="20%">
+        <col width="30%">
+        <col width="10%">
+        <col>
+    </colgroup>
+    <thead>
+
+    <tr>
+        <th>角色名称</th>
+        <th>角色编码</th>
+        <th>角色描述</th>
+        <th>角色状态</th>
+        {{# if(isUserRes('编辑')||isUserRes('删除')||isUserRes('绑定')){ }}
+        <th>操作</th>
+        {{# } }}
+    </tr>
+    </thead>
+    <tbody>
+    {{#
+    function isUserRes(name){
+    for (var key in d.resData) {
+    if (d.resData[key].title === name) {
+    return true
+    }
+
+    }
+    return false;
+    }
+    }}
+    {{# layui.each(d.listData, function(index, item){ }}
+    <tr>
+        <td>{{item.name}}</td>
+        <td>{{item.code}}</td>
+        <td>{{item.remark}}</td>
+        <td class="td-center">{{# if(item.status == 0){ }}
+            <button class="layui-btn layui-btn-normal layui-btn-xs">正常</button>
+            {{# } else if(item.status == 1){ }}
+            <button class="layui-btn layui-btn-danger layui-btn-xs">停用</button>
+            {{# } else if(item.status == -1){ }}
+            <button class="layui-btn layui-btn-warm layui-btn-xs">删除</button>
+            {{# } }}
+        </td>
+        {{# if(isUserRes('编辑')||isUserRes('删除')||isUserRes('绑定')){ }}
+        <td class="td-center">
+            {{# if(isUserRes('编辑')){ }}
+            <a href='javascript:void(0);' class="layui-btn layui-btn-xs" data-id="{{item.id}}" data-method="editRole">编辑</a>
+            {{# } if(isUserRes('删除')){}}
+            <a href='javascript:void(0);' class="layui-btn layui-btn-xs layui-btn-danger" data-id="{{item.id}}"
+               data-method="delRole">删除</a>
+            {{# } if(isUserRes('绑定')){}}
+            <a href='javascript:void(0);' class="layui-btn layui-btn-xs layui-btn-warm" data-id="{{item.id}}"
+               data-method="bindRole">绑定资源</a>
+            {{# } }}
+        </td>
+        {{# } }}
+    </tr>
+    {{# }); }}
+    {{# if(d.listData.length === 0){ }}
+    <tr class="nodata-tr">
+        <td colspan="5">
+            <div class="nodata-box">
+                <img src="../src/images/no-data.png" alt="">
+                <p>暂无数据</p>
+            </div>
+        </td>
+    </tr>
+    {{# } }}
+
+    </tbody>
+</script>
+<script>
+    layui.use(['admin', 'jquery', 'index', 'form', 'laytpl', 'laypage', 'reqajax', 'func'], function () {
+        var $ = layui.$
+            , setter = layui.setter
+            , laytpl = layui.laytpl
+            , form = layui.form
+            , laypage = layui.laypage
+            , reqajax = layui.reqajax
+            , func = layui.func
+            , admin = layui.admin
+            , view = layui.view
+        var searchData = {}, pid = layui.router().search.pid, userRes = [];//searchData为查询条件，userRes为用户所拥有的功能（编辑删除等）
+        searchData.page_size = 5;
+        searchData.page_num = 1;
+        form.render();
+        //获取用户所拥有的功能列表
+
+        loadAllRole();
+
+        //角色列表渲染模板元素
+        var getTpl = "", view_tpl = document.getElementById('role_table');
+
+
+        /* 监听提交 */
+        form.on('submit(search)', function (data) {
+            searchData.name = data.field.role_name;
+            searchData.code = data.field.role_code;
+            loadAllRole()
+            return false;
+        });
+
+        /*获取角色列表*/
+        function loadAllRole() {
+            reqajax.ajaxFun({
+                method: 'get'
+                , url: '/roles'
+                , data: searchData
+                , success: function (res) {
+                    var roleListRes = res
+                    reqajax.ajaxFun({
+                        method: 'get'
+                        , url: '/users/resources/' + pid + '/' + layui.data(layui.setter.tableName)[layui.setter.request.tokenName]
+                        ,success: function (res) {
+                            userRes = res.data;
+                            if (!func.strIsExit('新增', userRes)) {
+                                $("#add_role_btn").hide()
+                            }
+                            getTpl = document.getElementById('roleList').innerHTML;
+                            var tpl_data = {
+                                listData: roleListRes.data,
+                                resData: userRes
+                            }
+                            laytpl(getTpl).render(tpl_data, function (html) {
+                                view_tpl.innerHTML = html;
+                            });
+                            //显示总条数
+                            $("#role_count").text(roleListRes.total)
+                            //分页渲染
+                            laypage.render({
+                                elem: 'page_role'
+                                , count: roleListRes.total
+                                , limit: searchData.page_size
+                                , curr: searchData.page_num
+                                , first: '首页'
+                                , last: '尾页'
+                                , prev: '<em>←</em>'
+                                , next: '<em>→</em>'
+                                , jump: function (obj, first) {
+                                    if (!first) {
+                                        searchData.page_num = obj.curr
+                                        loadAllRole()
+                                    }
+
+                                }
+                            });
+                        }
+                    })
+
+
+                }
+            })
+        }
+
+
+        //角色操作方法
+        var active = {
+            editRole: function (data) {
+                admin.popup({
+                    title: '修改角色信息'
+                    , area: ['480px', '500px']
+                    , id: 'LAY-popup-role-edit'
+                    , success: function (layero, index) {
+                        view(this.id).render('role/editRole', {id: data.id, index: index}).done(function () {
+                            form.render(null, 'form-edit-role');
+                        });
+                    }
+                    , end: function () {//无论是确认还是取消，只要层被销毁了，end都会执行，不携带任何参数。layer.open关闭事件
+                        loadAllRole()
+                    }
+                });
+            }
+            , addNewRole: function () {
+                admin.popup({
+                    title: '添加新角色'
+                    , area: ['480px', '500px']
+                    , id: 'LAY-popup-role-add'
+                    , success: function (layero, index) {
+                        view(this.id).render('role/addRole', {index: index}).done(function () {
+                            form.render(null, 'form-add-role');
+                        });
+                    }
+                    , end: function () {//无论是确认还是取消，只要层被销毁了，end都会执行，不携带任何参数。layer.open关闭事件
+                        loadAllRole()
+                    }
+                });
+            }
+            , delRole: function (data) {
+                layer.confirm('你确定要删除该角色吗？', function (index) {
+                    reqajax.ajaxFun({
+                        method: 'delete'
+                        , url: '/roles/' + data.id
+                        , success: function (res) {
+                            if (res.succeed) {
+                                layer.msg(res.msg)
+                                loadAllRole()
+                            } else {
+                                layer.msg(res.msg)
+                            }
+                        }
+                    })
+                });
+
+            }
+            , bindRole: function (data) {
+                admin.popup({
+                    title: '绑定资源'
+                    , area: ['520px', '600px']
+                    , id: 'LAY-popup-role-bind'
+                    , success: function (layero, index) {
+                        view(this.id).render('role/bindResource', {id: data.id, index: index}).done(function () {
+                            form.render(null, 'form-bind-resource');
+                        });
+                    }
+                    , end: function () {//无论是确认还是取消，只要层被销毁了，end都会执行，不携带任何参数。layer.open关闭事件
+                        loadAllRole()
+                    }
+                });
+            }
+        }
+
+
+        //操作按钮点击事件绑定
+        $('.layui-card').on('click', '.layui-btn', function () {
+            var othis = $(this), method = othis.data('method');
+            active[method] ? active[method].call(this, othis.data()) : '';
+        });
+
+    })
+
+</script>

@@ -1,0 +1,103 @@
+/**
+ @Desc：layuiDemo 自定义样式
+ @Author：ye
+ */
+.layui-card{
+    padding: 0 15px 15px;
+}
+.layui-card.layadmin-header{
+    padding: 0;
+}
+.page-con{
+    display: inline-block;
+    margin-right: 15px;
+}
+.pop-win .layui-card{
+    box-shadow: none;
+}
+.font-red{
+    color: #ff3235;
+}
+.no-padding{
+    padding: 0 !important;
+}
+
+.page-container{
+    height: 100%;
+    box-sizing: border-box;
+}
+.page-container>div,.page-container>div>div,.page-container>div>div>.layui-card{
+    height: 100%;
+}
+.layui-form-item .layui-input-block>p{
+    height: 38px;
+    line-height: 38px;
+    padding: 0 5px;
+    color: #000;
+}
+
+.icon-list{
+    margin-left: -7px;
+}
+.icon-list>li{
+    float: left;
+    width: 10%;
+    padding: 0 7px 14px;
+    box-sizing: border-box;
+}
+.pop-win .icon-list>li{
+    width: 25%;
+}
+.icon-list>li>div{
+    height:40px;
+    line-height: 40px;
+    color: #666;
+    border:1px solid #e5e5e5;
+    text-align: center;
+}
+.icon-list>li.on>div{
+    background-color: #5FB878;
+    color: #fff;
+}
+.icon-list>li i{
+    font-size: 20px;
+}
+.search-area{
+    padding: 10px 0 0;
+}
+.search-area .layui-form-item .layui-inline{
+    margin-bottom: 0;
+}
+.search-area  .layui-btn{
+    margin-left: 20px;
+}
+.test-table-operate-btn .layui-btn{
+    margin-bottom: 10px;
+}
+.form-btn-box{
+    padding: 15px 0 0;
+    text-align: center;
+}
+.td-center,.layui-table th{
+    text-align: center;
+}
+.padded-15{
+    padding: 15px;
+}
+.nodata-box{
+    height: auto;
+    text-align: center;
+    margin: 15px auto;
+}
+.nodata-tr{
+    background-color: #fff!important;
+}
+.nodata-box>img{
+    max-width: 300px;
+    width: 240px;
+    height: 188px;
+
+}
+.nodata-box>p{
+    margin: 15px 0 0;
+}

@@ -1,0 +1,104 @@
+<script type="text/html" template>
+    <link rel="stylesheet" href="{{ layui.setter.base }}style/login.css" media="all">
+</script>
+
+<div class="header">
+    <div class="header-title">
+        <span class="header-title-name">layui Demo登录</span>
+    </div>
+</div>
+<div class="main" id="LAY-user-login">
+    <div class="login-con">
+        <div class="layadmin-user-login-main">
+            <div class="layadmin-user-login-box layadmin-user-login-header">
+                <h2>登录服务平台</h2>
+            </div>
+            <div class="layadmin-user-login-box layadmin-user-login-body layui-form">
+                <div class="layui-form-item">
+                    <label class="layadmin-user-login-icon icon_user"
+                           for="LAY-user-login-username"></label>
+                    <input type="text" name="userName" id="LAY-user-login-username" lay-verify="required"
+                           placeholder="请输入用户名"
+                           class="layui-input" value="admin">
+                </div>
+                <div class="layui-form-item">
+                    <label class="layadmin-user-login-icon icon_pass"
+                           for="LAY-user-login-password"></label>
+                    <input type="password" name="passWord" id="LAY-user-login-password" lay-verify="required"
+                           placeholder="请输入密码" class="layui-input" value="123456">
+                </div>
+                <div class="layui-form-item">
+                    <button class="layui-btn layui-btn-fluid" id="login_btn" lay-submit
+                            lay-filter="LAY-user-login-submit">登录
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+<div class="footer">
+    <ul>
+        <li>技术支持：<a href="http://www.jqsoft.net/" target="_blank">安徽晶奇网络科技股份有限公司</a></li>
+        <li>联系电话：0551-65350880/65350890</li>
+        <li> @2019 www. jqsoft. net</li>
+    </ul>
+</div>
+
+
+<script>
+    layui.use(['jquery', 'form', 'reqajax'], function () {
+        var $ = layui.$
+            , setter = layui.setter
+            , form = layui.form
+            , router = layui.router()
+            , search = router.search
+            , reqajax = layui.reqajax;
+        /* layui.use('index', layui.factory('index'));*/
+        form.render();
+        //提交
+        form.on('submit(LAY-user-login-submit)', function (obj) {
+            reqajax.ajaxFun({
+                url: '/users/login'
+                , data: JSON.stringify(obj.field)
+                , success: function (res) {
+                    if (res.succeed) {
+                        layui.data(layui.setter.tableName, {
+                            key: setter.request.tokenName,
+                            value: res.data
+                        });
+                        layui.sessionData(layui.setter.tableName, {
+                            key: setter.request.tokenName,
+                            value: res.data
+                        });
+                        layer.msg("登入成功", {
+                            offset: '15px'
+                            , icon: 1
+                            , time: 1000
+                        }, function () {
+                            location.hash = search.redirect ? decodeURIComponent(search.redirect) + 'token=' + res.data : '/';
+                        });
+                    } else {
+                        layer.msg(res.msg, {
+                            shift: 6,
+                            time: 1000,
+                            icon: 5
+                        });
+                    }
+                }
+                , error: function () {
+                    layer.msg('登录失败');
+                }
+            })
+        });
+
+        document.onkeydown = function (e) {
+            var ev = document.all ? window.event : e;
+            if (ev.keyCode == 13) {
+                $("#login_btn").click()
+            }
+        }
+    });
+
+</script>

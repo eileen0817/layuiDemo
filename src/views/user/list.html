@@ -1,0 +1,291 @@
+<title>用户管理</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">系统管理</a>
+        <a><cite>用户管理</cite></a>
+    </div>
+</div>
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">用户数据操作</div>
+
+                <div class="layui-card-body">
+                    <form class="layui-form search-area">
+                        <div class="layui-form-item">
+                            <div class="layui-inline">
+                                <label class="layui-form-label">用户名</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="user_name" autocomplete="off"
+                                           placeholder="请输入用户名"
+                                           class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-inline">
+                                <label class="layui-form-label">真实姓名</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="real_name" autocomplete="off"
+                                           placeholder="请输入用户真实姓名"
+                                           class="layui-input">
+                                </div>
+                            </div>
+                            <input type="hidden" name="page_size" value="5">
+                            <input type="hidden" name="page_num" value="1">
+                            <button class="layui-btn" lay-submit="" lay-filter="search">搜索</button>
+                        </div>
+                    </form>
+                    <div class="layui-btn-group test-table-operate-btn">
+                        <button id="add_user_btn" class="layui-btn" data-method="addNewUser">新增</button>
+                    </div>
+                    <table class="layui-table" id="user_table">
+
+                    </table>
+                    <div>
+                        <div id="page_user" class="page-con"></div>
+                        共<span id="user_count"></span>条结果
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script type="text/html" id="userList">
+    <colgroup>
+        <col width="150">
+        <col width="150">
+        <col width="200">
+        <col>
+    </colgroup>
+    <thead>
+
+    <tr>
+        <th>用户名</th>
+        <th>真实姓名</th>
+        <th>性别</th>
+        <th>身份证号</th>
+        <th>手机号</th>
+        {{# if(isUserRes('编辑')||isUserRes('删除')||isUserRes('授权')){ }}
+        <th>操作</th>
+        {{# } }}
+
+    </tr>
+    </thead>
+    <tbody>
+    {{#
+    function isUserRes(name){
+    for (var key in d.resData) {
+    if (d.resData[key].title === name) {
+    return true
+    }
+
+    }
+    return false;
+    }
+    }}
+    {{# layui.each(d.listData, function(index, item){ }}
+    <tr>
+        <td> {{item.userName}}</td>
+        <td>{{item.realName}}</td>
+        <td>{{# if(item.sex === 1){ }} 男
+            {{# } else{ }} 女 {{# } }}
+        </td>
+        <td>{{# if(item.cardNo !=null){ }} {{item.cardNo}}
+            {{# } else{ }} 暂无 {{# } }}
+        </td>
+        <td>{{# if(item.mobie !=null){ }} {{item.mobie}}
+            {{# } else{ }} 暂无 {{# } }}
+        </td>
+        {{# if(isUserRes('编辑')||isUserRes('删除')||isUserRes('授权')){ }}
+        <td class="td-center">
+            {{# if(isUserRes('编辑')){ }}
+            <a href='javascript:void(0);' class="layui-btn layui-btn-xs" data-id="{{item.id}}" data-method="editUser">编辑</a>
+            {{# } if(isUserRes('删除')){}}
+            <a href='javascript:void(0);' class="layui-btn layui-btn-xs layui-btn-danger" data-id="{{item.id}}"
+               data-method="delUser">删除</a>
+            {{# } if(isUserRes('授权')){}}
+            <a href='javascript:void(0);' class="layui-btn layui-btn-xs layui-btn-warm" data-id="{{item.id}}"
+               data-method="grantUser">授权</a>
+            {{# } }}
+        </td>
+        {{# } }}
+    </tr>
+    {{# }); }}
+    {{# if(d.listData.length === 0){ }}
+    <tr class="nodata-tr">
+        <td colspan="6">
+            <div class="nodata-box">
+                <img src="../src/images/no-data.png" alt="">
+                <p>暂无数据</p>
+            </div>
+        </td>
+    </tr>
+    {{# } }}
+
+    </tbody>
+</script>
+<script>
+    layui.use(['admin', 'jquery', 'index', 'form', 'laytpl', 'laypage', 'reqajax', 'func'], function () {
+        var $ = layui.$
+            , setter = layui.setter
+            , laytpl = layui.laytpl
+            , form = layui.form
+            , laypage = layui.laypage
+            , reqajax = layui.reqajax
+            , func = layui.func
+            , admin = layui.admin
+            , view = layui.view;
+        var searchData = {}, pid = layui.router().search.pid, userRes = [];//searchData为查询条件，userRes为用户所拥有的功能（编辑删除等）
+        searchData.page_size = 5;
+        searchData.page_num = 1;
+        form.render();
+
+
+        loadAllUser();
+
+        //用户列表渲染模板元素
+        var getTpl = "", view_tpl = document.getElementById('user_table');
+
+
+        /* 监听提交 */
+        form.on('submit(search)', function (data) {
+            searchData = data.field
+            loadAllUser()
+            return false;
+        });
+
+        /*获取用户列表*/
+        function loadAllUser() {
+            reqajax.ajaxFun({
+                method: 'get'
+                , url: '/users'
+                , data: searchData
+                , success: function (res) {
+                    var userListRes = res;
+                    //获取用户所拥有的功能列表
+                    reqajax.ajaxFun({
+                        method: 'get'
+                        ,
+                        url: '/users/resources/' + pid + '/' + layui.data(layui.setter.tableName)[layui.setter.request.tokenName]
+                        ,
+                        success: function (res2) {
+                            userRes = res2.data;
+                            if (!func.strIsExit('新增', userRes)) {
+                                $("#add_user_btn").hide()
+                            }
+                            getTpl = document.getElementById('userList').innerHTML;
+                            var tpl_data = {
+                                listData: userListRes.data,
+                                resData: userRes
+                            }
+                            laytpl(getTpl).render(tpl_data, function (html) {
+                                view_tpl.innerHTML = html;
+                            });
+                            //显示总条数
+                            $("#user_count").text(userListRes.total)
+                            //分页渲染
+                            laypage.render({
+                                elem: 'page_user'
+                                , count: userListRes.total
+                                , limit: searchData.page_size
+                                , curr: searchData.page_num
+                                , first: '首页'
+                                , last: '尾页'
+                                , prev: '<em>←</em>'
+                                , next: '<em>→</em>'
+                                , jump: function (obj, first) {
+                                    if (!first) {
+                                        searchData.page_num = obj.curr
+                                        loadAllUser()
+                                    }
+
+                                }
+                            });
+                        }
+                    })
+
+
+                }
+            })
+        }
+
+        //用户操作方法
+        var active = {
+            editUser: function (data) {
+                admin.popup({
+                    title: '修改用户信息'
+                    , area: ['480px', '530px']
+                    , id: 'LAY-popup-user-edit'
+                    , success: function (layero, index) {
+                        view(this.id).render('user/editUser', {id: data.id, index: index}).done(function () {
+                            form.render(null, 'form-edit-user');
+                        });
+                    }
+                    , end: function () {//无论是确认还是取消，只要层被销毁了，end都会执行，不携带任何参数。layer.open关闭事件
+                        loadAllUser()
+                    }
+                });
+            }
+            , addNewUser: function () {
+                admin.popup({
+                    title: '添加新用户'
+                    , area: ['480px', '530px']
+                    , id: 'LAY-popup-user-add'
+                    , success: function (layero, index) {
+                        view(this.id).render('user/addUser', {index: index}).done(function () {
+                            form.render(null, 'form-add-user');
+                        });
+                    }
+                    , end: function () {//无论是确认还是取消，只要层被销毁了，end都会执行，不携带任何参数。layer.open关闭事件
+                        loadAllUser()
+                    }
+                });
+            }
+            , delUser: function (data) {
+                layer.confirm('你确定要删除该用户吗？', function (index) {
+                    reqajax.ajaxFun({
+                        method: 'delete'
+                        , url: '/users/' + data.id
+                        , success: function (res) {
+                            if (res.succeed) {
+                                layer.msg(res.msg)
+                                loadAllUser()
+                            } else {
+                                layer.msg(res.msg)
+                            }
+                        }
+                    })
+                });
+
+            }
+            , grantUser: function (data) {
+                admin.popup({
+                    title: '授权用户'
+                    , area: ['480px', '320px']
+                    , id: 'LAY-popup-user-grant'
+                    , success: function (layero, index) {
+                        view(this.id).render('user/grantUser', {id: data.id, index: index}).done(function () {
+                            form.render(null, 'form-grant-user');
+                        });
+                    }
+                    , end: function () {//无论是确认还是取消，只要层被销毁了，end都会执行，不携带任何参数。layer.open关闭事件
+                        loadAllUser()
+                    }
+                });
+            }
+        }
+
+
+        //操作按钮点击事件绑定
+        $('.layui-card').on('click', '.layui-btn', function () {
+            var othis = $(this), method = othis.data('method');
+            active[method] ? active[method].call(this, othis.data()) : '';
+        });
+
+    })
+
+</script>

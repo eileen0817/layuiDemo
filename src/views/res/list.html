@@ -1,0 +1,241 @@
+<title>资源管理</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">系统管理</a>
+        <a><cite>资源管理</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid page-container">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md4">
+            <div class="layui-card">
+                <div class="layui-card-header">资源导航</div>
+                <div id="nav_list" class="demo-tree"></div>
+            </div>
+
+        </div>
+        <div class="layui-col-md8">
+            <div class="layui-card">
+                <div class="layui-card-header">资源操作</div>
+                <div class="layui-btn-group test-table-operate-btn" style="margin-top: 15px;">
+                    <button id="add_res_btn" class="layui-btn" data-method="addNewRes" data-pid="root">新增</button>
+                </div>
+                <table class="layui-table" id="res_table">
+
+                </table>
+                <div id="res_page_box">
+                    共<span id="res_count"></span>条结果
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script type="text/html" id="resList">
+
+    <thead>
+
+    <tr>
+        <th>编码</th>
+        <th>名称</th>
+        <th>类型</th>
+        <th>状态</th>
+        <th>序号</th>
+        <th>地址</th>
+        {{# if(isUserRes('编辑')||isUserRes('删除')){ }}
+        <th>操作</th>
+        {{# } }}
+    </tr>
+    </thead>
+    <tbody>
+    {{#
+    function isUserRes(name){
+    for (var key in d.userRes) {
+    if (d.userRes[key].title === name) {
+    return true
+    }
+
+    }
+    return false;
+    }
+    }}
+    {{# layui.each(d.listData.childData, function(index, item){ }}
+    <tr>
+        <td>{{item.name}}</td>
+        <td>{{item.title}}</td>
+        <td>{{# if(item.type == 1){ }}
+            菜单
+            {{# } else if(item.type == 2){ }}
+            功能
+            {{# } }}
+        </td>
+        <td class="td-center">{{# if(item.status == 0){ }}
+            <button class="layui-btn layui-btn-normal layui-btn-xs">正常</button>
+            {{# } else if(item.status == 1){ }}
+            <button class="layui-btn layui-btn-danger layui-btn-xs">不可用</button>
+            {{# } }}
+        </td>
+
+        <td>{{item.sort}}</td>
+        <td>{{item.jump}}</td>
+        {{# if(isUserRes('编辑')||isUserRes('删除')){ }}
+        <td class="td-center">
+            {{# if(isUserRes('编辑')){ }}
+            <a href='javascript:void(0);' class="layui-btn layui-btn-xs" data-id="{{item.id}}"
+               data-pid="{{d.listData.pid}}"
+               data-method="editRes">编辑</a>
+            {{# } if(isUserRes('删除')){}}
+            <a href='javascript:void(0);' class="layui-btn layui-btn-xs layui-btn-danger" data-id="{{item.id}}"
+               data-method="delRes">删除</a>
+            {{# } }}
+        </td>
+        {{# } }}
+    </tr>
+    {{# }); }}
+    {{# if(d.listData.childData.length === 0){ }}
+    <tr class="nodata-tr">
+        <td colspan="7">
+            <div class="nodata-box">
+                <img src="../src/images/no-data.png" alt="">
+                <p>暂无数据</p>
+            </div>
+        </td>
+    </tr>
+    {{# } }}
+
+    </tbody>
+</script>
+<script>
+    layui.use(['admin', 'jquery', 'index', 'laytpl', 'laypage', 'reqajax', 'tree', 'func'], function () {
+        var $ = layui.$
+            , setter = layui.setter
+            , laytpl = layui.laytpl
+            , laypage = layui.laypage
+            , reqajax = layui.reqajax
+            , admin = layui.admin
+            , view = layui.view
+            , tree = layui.tree
+            , func = layui.func;
+        //资源列表渲染模板元素
+        var getTpl = document.getElementById('resList').innerHTML, view_tpl = document.getElementById('res_table'),
+            pid = layui.router().search.pid, resTplData = {};//searchData为查询条件,resTplData为右侧展示数据
+        //获取用户所拥有的功能列表
+
+        $("#res_page_box").hide()
+        loadTree()
+
+        //展示资源树及其列表
+        function loadTree(type) {
+            reqajax.ajaxFun({
+                method: 'get'
+                , url: '/resources'
+                , success: function (res) {
+                    var jsonDataTree = func.transData(res.data, 'id', 'pid', 'children', 2);
+                    reqajax.ajaxFun({
+                        method: 'get'
+                        , url: '/users/resources/' + pid + '/' + layui.data(layui.setter.tableName)[layui.setter.request.tokenName]
+                        ,success: function (res) {
+                            resTplData.userRes = res.data;
+                            if (!func.strIsExit('新增', resTplData.userRes)) {
+                                $("#add_res_btn").hide()
+                            }
+                            tree.render({
+                                elem: '#nav_list'
+                                , data: jsonDataTree
+                                , onlyIconControl: true  //是否仅允许节点左侧图标控制展开收缩
+                                , click: function (obj) {
+                                    treeOnClick(obj.data.id)
+                                }
+                            });
+                        }
+                    })
+
+                }
+            })
+        }
+
+        //点击获取该节点的子节点数据列表信息
+        function treeOnClick(treeId) {
+            reqajax.ajaxFun({
+                method: 'get'
+                , url: '/resources?pid=' + treeId
+                , success: function (res) {
+                    var childrenData = res.data
+                    var resData = {
+                        childData: childrenData,
+                        pid: treeId
+                    }
+                    resTplData.listData=resData;
+                    $("#add_res_btn").attr('data-pid', treeId)
+                    if (childrenData.length!=0) {
+                        $("#res_page_box").show()
+                        //显示总条数
+                        $("#res_count").text(childrenData.length)
+                    } else {
+                        resTplData.listData.childData = []
+                        $("#res_page_box").hide()
+                    }
+
+                    laytpl(getTpl).render(resTplData, function (html) {
+                        view_tpl.innerHTML = html;
+                    });
+                }
+            })
+        }
+
+        //资源管理操作
+        var active = {
+            editRes: function (data) {
+                location.hash = "/res/editRes/id=" + data.id + "/pid=" + data.pid
+            }
+            , addNewRes: function (data) {
+                location.hash = "/res/addRes/pid=" + data.pid
+            }
+            , delRes: function (data) {
+                layer.confirm('你确定要删除该资源吗？', function (index) {
+                    reqajax.ajaxFun({
+                        method: 'delete'
+                        , url: '/resources/' + data.id
+                        , success: function (res) {
+                            if (res.succeed) {
+                                resTplData.listData.childData = deleteItem(data.id, resTplData.listData.childData)
+                                laytpl(getTpl).render(resTplData, function (html) {
+                                    view_tpl.innerHTML = html;
+                                });
+                                $("#res_page_box").show()
+                                //显示总条数
+                                $("#res_count").text(resTplData.listData.childData.length)
+                                loadTree()
+                                layer.msg(res.msg)
+                            } else {
+                                layer.msg(res.msg)
+                            }
+                        }
+                    })
+                });
+
+            }
+        }
+
+        //删除表格中对应数据前端操作
+        function deleteItem(item, list) {
+            for (var key in list) {
+                if (list[key].id === item) {
+                    list.splice(key, 1)
+                }
+            }
+            return list;
+        }
+
+        //操作按钮点击事件绑定
+        $('.layui-card').on('click', '.layui-btn', function () {
+            var othis = $(this), method = othis.data('method');
+            active[method] ? active[method].call(this, othis.data()) : '';
+        });
+
+    })
+
+</script>

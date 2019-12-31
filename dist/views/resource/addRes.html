@@ -1,0 +1,172 @@
+<div class="layui-fluid  pop-win no-padding">
+    <div class="layui-card  no-padding">
+        <div class="layui-card-body no-padding ">
+            <form class="layui-form" method="post" action="" lay-filter="pop-form-add-res">
+                <script type="text/html" template lay-done="layui.data.sendPara(d)">
+
+                </script>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">父节点</label>
+                    <div class="layui-input-block">
+                        <input id="pop_res_add_pid" type="hidden" name="pid">
+                        <p id="pop_res_add_name"></p>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label"><span class="font-red">*</span>编码</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="name" lay-verify="required" autocomplete="off" placeholder="请输入编码"
+                               class="layui-input">
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label"><span class="font-red">*</span>名称</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="title" lay-verify="required" autocomplete="off"
+                               placeholder="请输入名称"
+                               class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label"><span class="font-red">*</span>地址</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="jump" lay-verify="required" autocomplete="off"
+                               placeholder="请输入地址"
+                               class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label"><span class="font-red">*</span>类型</label>
+                    <div class="layui-input-block">
+                        <select name="type">
+                            <option id="sel_menu" value="1">菜单</option>
+                            <option id="sel_fun" value="2">功能</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">序号</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="sort" lay-verify="required|number" autocomplete="off"
+                               placeholder="请输入序号"
+                               class="layui-input">
+                    </div>
+                </div>
+
+<!--                <div class="layui-form-item">-->
+<!--                    <label class="layui-form-label">状态</label>-->
+<!--                    <div class="layui-input-block">-->
+<!--                        <input id="normal" type="radio" name="status" value="0" title="正常" checked="">-->
+<!--                        <input id="stoped" type="radio" name="status" value="1" title="不可用">-->
+<!--                    </div>-->
+<!--                </div>-->
+                <div class="layui-form-item">
+                    <label class="layui-form-label">图标</label>
+                    <div class="layui-input-block">
+                        <ul id="ztree_icon_list" class="icon-list layui-clear">
+
+                        </ul>
+                    </div>
+                </div>
+                <div class="form-btn-box">
+                    <button class="layui-btn" lay-submit="" lay-filter="addResourcePop">提交</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script type="text/html" id="ztreeIconList">
+    {{# layui.each(d.iconList, function(index, item){
+    if(d.showIcon==item){
+    }}
+
+    <li data-name="{{item}}" class="on">
+        <div>
+            <i class="iconfont {{item}}"></i>
+        </div>
+    </li>
+    {{#  }else{
+    }}
+    <li data-name="{{item}}">
+        <div>
+            <i class="iconfont {{item}}"></i>
+        </div>
+    </li>
+    {{# }
+    }); }}
+</script>
+<script>
+    layui.data.sendPara = function (d) {
+        layui.use(['admin', 'reqajax', 'laytpl', 'form'], function () {
+            var $ = layui.$
+                , admin = layui.admin
+                , laytpl = layui.laytpl
+                , reqajax = layui.reqajax
+                , form = layui.form;
+            form.render();
+            var tplData = {
+                iconList: ['icon-set', 'icon-edit', 'icon-password', 'icon-link', 'icon-data', 'icon-notice', 'icon-book', 'icon-homesolid', 'icon-home1', 'icon-edit1', 'icon-notices', 'icon-noticesolid', 'icon-user', 'icon-unusual', 'icon-functionsolid', 'icon-flow', 'icon-home', 'icon-database', 'icon-setting', 'icon-flowset', 'icon-coumputer', 'icon-filesearch', 'icon-computersolid', 'icon-tablesolid', 'icon-trend', 'icon-usersettings', 'icon-edit2', 'icon-flowaround', 'icon-statisticsolid', 'icon-usersolid', 'icon-statistics2', 'icon-notice1', 'icon-user2', 'icon-excesolid', 'icon-function', 'icon-link1', 'icon-pass', 'icon-exception', 'icon-statistics', 'icon-table'],
+                showIcon: ''
+            }
+            var tree_res_pid = d.params.pid;
+            $("#pid").val(tree_res_pid)
+            //图标列表渲染模板元素
+            var getTpl = document.getElementById('ztreeIconList').innerHTML, view_tpl = document.getElementById('ztree_icon_list');
+            laytpl(getTpl).render(tplData, function (html) {
+                view_tpl.innerHTML = html;
+            });
+            if (tree_res_pid == "root") {
+                $("#pop_res_add_name").text('根目录')
+                $("#pop_res_add_pid").val('root')
+            } else {
+                reqajax.ajaxFun({
+                    method: 'get'
+                    , url: '/resources/' + tree_res_pid
+                    , success: function (res) {
+                        $("#pop_res_add_name").text(res.data.title)
+                        $("#pop_res_add_pid").val(res.data.id)
+                    }
+                })
+            }
+
+            //图标选中切换效果
+            $(".icon-list").on('click', 'li', function () {
+                if ($(this).hasClass("on")) {
+                    $(this).removeClass("on");
+                    tplData.showIcon = "";
+                } else {
+                    $(this).addClass("on").siblings("li").removeClass("on");
+                    tplData.showIcon = $(this).attr("data-name");
+                }
+            })
+
+            //新增资源表单提交
+            form.on('submit(addResourcePop)', function (data) {
+                data.field.icon = tplData.showIcon;
+                reqajax.ajaxFun({
+                    url: '/resources'
+                    , data: JSON.stringify(data.field)
+                    , success: function (res) {
+                        if (res.succeed) {
+                            layer.msg('新增成功！', {
+                                icon: 1, time: 1000, end: function () {
+                                    layer.close(d.params.index); //执行关闭
+                                }
+                            });
+                        } else {
+                            layer.msg(res.msg, {icon: 2, time: 1000});
+                        }
+                    }
+                })
+                return false;
+            });
+
+
+        })
+    }
+
+
+</script>
+

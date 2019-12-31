@@ -1,0 +1,277 @@
+<title>资源管理2</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">系统管理</a>
+        <a><cite>资源管理2</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid page-container">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md4">
+            <div class="layui-card">
+                <div class="layui-card-header">资源导航</div>
+                <div id="res_ztree" class="ztree"></div>
+            </div>
+
+        </div>
+        <div class="layui-col-md8">
+            <div class="layui-card">
+                <div class="layui-card-header">资源操作</div>
+                <div class="layui-btn-group test-table-operate-btn" style="margin-top: 15px;">
+                    <button class="layui-btn" data-method="addNewResource" id="pop_add_res_btn" data-pid="root">新增</button>
+                </div>
+                <table class="layui-table" id="z_res_table">
+
+                </table>
+                <div id="page_res">
+                    共<span id="page_res_count"></span>条结果
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script type="text/html" id="zResList">
+
+    <thead>
+
+    <tr>
+        <th>编码</th>
+        <th>名称</th>
+        <th>类型</th>
+        <th>状态</th>
+        <th>序号</th>
+        <th>地址</th>
+        <th>操作</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{# layui.each(d.listData, function(index, item){ }}
+    <tr>
+        <td>{{item.name}}</td>
+        <td>{{item.title}}</td>
+        <td>{{# if(item.type == 1){ }}
+            菜单
+            {{# } else if(item.type == 2){ }}
+            功能
+            {{# } }}
+        </td>
+        <td class="td-center">{{# if(item.status == 0){ }}
+            <button class="layui-btn layui-btn-normal layui-btn-xs">正常</button>
+            {{# } else if(item.status == 1){ }}
+            <button class="layui-btn layui-btn-danger layui-btn-xs">不可用</button>
+            {{# } }}
+        </td>
+
+        <td>{{item.sort}}</td>
+        <td>{{item.jump}}</td>
+        <td class="td-center">
+            <a href='javascript:void(0);' class="layui-btn layui-btn-xs" data-id="{{item.id}}" data-pid="{{d.pid}}"
+               data-method="editResource">编辑</a>
+            <a href='javascript:void(0);' class="layui-btn layui-btn-xs layui-btn-danger" data-id="{{item.id}}"
+               data-method="delResource">删除</a>
+        </td>
+    </tr>
+    {{# }); }}
+    {{# if(d.listData.length === 0){ }}
+    <tr class="nodata-tr">
+        <td colspan="7">
+            <div class="nodata-box">
+                <img src="../src/images/no-data.png" alt="">
+                <p>暂无数据</p>
+            </div>
+        </td>
+    </tr>
+    {{# } }}
+
+    </tbody>
+</script>
+<script src="../src/lib/ztree/js/jquery-1.12.4.min.js"></script>
+<script src="../src/lib/ztree/js/jquery.ztree.core.js"></script>
+<script src="../src/lib/ztree/js/jquery.ztree.excheck.js"></script>
+<script src="../src/lib/ztree/js/jquery.ztree.exedit.js"></script>
+<script>
+    layui.use(['admin', 'index', 'laytpl', 'laypage', 'reqajax','form', 'func'], function () {
+        var setter = layui.setter
+            , laytpl = layui.laytpl
+            , laypage = layui.laypage
+            , reqajax = layui.reqajax
+            , admin = layui.admin
+            , view = layui.view
+            , form = layui.form
+            , func = layui.func;
+        //资源列表渲染模板元素
+        var getTpl = document.getElementById('zResList').innerHTML, view_tpl = document.getElementById('z_res_table'),
+            resData = {}, resTree;
+        $("#page_res").hide()
+        loadTree()
+        //树的配置， 引用ztree插件，具体使用请访问http://www.treejs.cn/v3/api.php
+        var treeSetting = {
+            view: {
+                selectedMulti: false
+            },
+            edit: {
+                enable: true,
+                showRemoveBtn: false,
+                showRenameBtn: false
+            },
+            data: {
+                keep: {
+                    parent: true,
+                    leaf: true
+                },
+                simpleData: {
+                    enable: true
+                }
+            },
+            callback: {
+                onClick: zTreeOnClick
+            }
+        };
+
+        //展示资源树及其列表
+        function loadTree() {
+            reqajax.ajaxFun({
+                method: 'get'
+                , url: '/resources'
+                , success: function (res) {
+                    resTree = res.data
+                    var jsonDataTree = func.transData(res.data, 'id', 'pid', 'children', 2);
+                    $.fn.zTree.init($("#res_ztree"), treeSetting, jsonDataTree);
+                }
+            })
+        }
+
+        //点击获取该节点的子节点数据列表信息
+        function zTreeOnClick(event, treeId, treeNode) {
+            reqajax.ajaxFun({
+                method: 'get'
+                , url: '/resources?pid=' + treeNode.id
+                , success: function (res) {
+                    var childrenData= res.data
+                    resData = {
+                        listData: childrenData,
+                        pid:  treeNode.id
+                    }
+                    $("#pop_add_res_btn").attr('data-pid',treeNode.id)
+                    if (childrenData) {
+                        $("#page_res").show()
+                        //显示总条数
+                        $("#page_res_count").text(childrenData.length)
+                    } else {
+                        resData.listData = []
+                        $("#page_res").hide()
+                    }
+                    laytpl(getTpl).render(resData, function (html) {
+                        view_tpl.innerHTML = html;
+                    });
+                }
+            })
+        }
+
+        //资源管理操作
+        var active = {
+            editResource: function (data) {
+                admin.popup({
+                    title: '添加新资源'
+                    , area: ['600px', '530px']
+                    , id: 'LAY-popup-res-add'
+                    , success: function (layero, index) {
+                        view(this.id).render('resource/editRes', {index: index,id:data.id,pid:data.pid}).done(function () {
+                            form.render(null, 'pop-form-edit-res');
+                        });
+                    }
+                    , end: function () {//无论是确认还是取消，只要层被销毁了，end都会执行，不携带任何参数。layer.open关闭事件
+
+                    }
+                });
+            }
+            , addNewResource: function (data) {
+                admin.popup({
+                    title: '添加新资源'
+                    , area: ['600px', '530px']
+                    , id: 'LAY-popup-res-add'
+                    , success: function (layero, index) {
+                        view(this.id).render('resource/addRes', {index: index,pid:data.pid}).done(function () {
+                            form.render(null, 'pop-form-add-res');
+                        });
+                    }
+                    , end: function () {//无论是确认还是取消，只要层被销毁了，end都会执行，不携带任何参数。layer.open关闭事件
+
+                    }
+                });
+            }
+            , delResource: function (data) {
+                layer.confirm('你确定要删除该资源吗？', function (index) {
+                    reqajax.ajaxFun({
+                        method: 'delete'
+                        , url: '/resources/' + data.id
+                        , success: function (res) {
+                            if (res.succeed) {
+                                resData.listData = deleteItem(data.id, resData.listData)
+                                laytpl(getTpl).render(resData, function (html) {
+                                    view_tpl.innerHTML = html;
+                                });
+                                $("#page_res").show()
+                                //显示总条数
+                                $("#page_res_count").text(resData.listData.length)
+                                treeRemove(data.id)
+                                layer.msg(res.msg)
+                            } else {
+                                layer.msg(res.msg)
+                            }
+                        }
+                    })
+                });
+
+            }
+        }
+
+        //删除节点
+        function treeRemove(nodeId) {
+            var node=getNodeById(nodeId)
+            var zTree = $.fn.zTree.getZTreeObj("res_ztree");
+            if (node) {
+                zTree.removeNode(node, true);
+            }else{
+                layer.alert("请选择一个资源进行删除",{icon:2, title:'错误'});
+                return;
+            }
+
+        }
+
+        //根据id获取节点信息
+        function getNodeById(id){
+            var treeObj = $.fn.zTree.getZTreeObj("res_ztree");
+            var nodes = treeObj.getSelectedNodes()[0].children;
+
+            for(var i=0;i<nodes.length;i++){
+                if(nodes[i].id==id){
+                    return nodes[i]
+                }
+            }
+            return null;
+        }
+
+        //删除表格中对应数据前端操作
+        function deleteItem(item, list) {
+            for (var key in list) {
+                if (list[key].id === item) {
+                    list.splice(key, 1)
+                }
+            }
+            return list;
+        }
+
+        //操作按钮点击事件绑定
+        $('.layui-card').on('click', '.layui-btn', function () {
+            var othis = $(this), method = othis.data('method');
+            active[method] ? active[method].call(this, othis.data()) : '';
+        });
+
+    })
+
+</script>

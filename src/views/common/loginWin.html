@@ -1,0 +1,76 @@
+<div class="layui-fluid  pop-win no-padding">
+    <div class="layui-card no-padding">
+        <div class="layui-card-body">
+            <form class="layui-form" method="post" action="" lay-filter="form-user-login">
+                <script type="text/html" template lay-done="layui.data.sendPara(d)">
+
+                </script>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">用户名</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="userName" lay-verify="required" autocomplete="off" placeholder="请输入用户名"
+                               class="layui-input">
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">密码</label>
+                    <div class="layui-input-block">
+                        <input type="password" name="passWord" lay-verify="required" autocomplete="off"
+                               placeholder="请输入密码"
+                               class="layui-input">
+                    </div>
+
+                </div>
+                <div class="layui-form-item">
+                    <button class="layui-btn layui-btn-fluid" lay-submit="" lay-filter="LAY-user-login">登录</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    layui.data.sendPara = function (d) {
+        layui.use(['reqajax', 'form', 'admin'], function () {
+            var $ = layui.$
+                , reqajax = layui.reqajax
+                , setter = layui.setter
+                , form = layui.form;
+            form.render();
+            form.on('submit(LAY-user-login)', function (data) {
+                reqajax.ajaxFun({
+                    url: '/users/login'
+                    , data: JSON.stringify(data.field)
+                    , success: function (res) {
+                        if (res.succeed) {
+                            layui.data(layui.setter.tableName, {
+                                key: setter.request.tokenName,
+                                value: res.data
+                            });
+                            layer.msg("登入成功", {
+                                offset: '15px'
+                                , icon: 1
+                                , time: 1000, end: function () {
+                                    layer.close(d.params.index); //执行关闭
+                                }
+                            });
+                        } else {
+                            layer.msg('您输入的用户名密码错误', {
+                                shift: 6,
+                                time: 1000,
+                                icon: 5
+                            });
+                        }
+                    }
+                    , error: function () {
+                        layer.msg('登录失败');
+                    }
+                })
+                return false;
+            })
+        })
+    }
+
+</script>
+

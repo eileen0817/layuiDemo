@@ -1,0 +1,90 @@
+<div class="layui-fluid  pop-win no-padding">
+    <div class="layui-card no-padding">
+        <div class="layui-card-body no-padding">
+            <form class="layui-form" method="post" action="" lay-filter="form-add-role">
+                <script type="text/html" template lay-done="layui.data.sendPara(d)">
+
+                </script>
+                <div class="layui-form-item">
+                    <label class="layui-form-label"><span class="font-red">*</span> 角色编码</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="code" lay-verify="required" autocomplete="off" placeholder="请输入用户名"
+                               class="layui-input">
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label"><span class="font-red">*</span> 角色名称</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="name" lay-verify="required" autocomplete="off"
+                               placeholder="请输入角色名称"
+                               class="layui-input">
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">父ID</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="pid" autocomplete="off" placeholder="请输入父ID"
+                               class="layui-input">
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">角色描述</label>
+                    <div class="layui-input-block">
+                        <textarea name="remark" autocomplete="off" placeholder="请输入角色描述"
+                                  class="layui-textarea"></textarea>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">状态</label>
+                    <div class="layui-input-block">
+                        <input type="radio" name="status" value="0" title="正常" checked="">
+                        <input type="radio" name="status" value="1" title="停用">
+                        <input type="radio" name="status" value="-1" title="删除">
+                    </div>
+                </div>
+                <div class="form-btn-box">
+                    <button class="layui-btn" lay-submit="" lay-filter="addRole">提交</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    layui.data.sendPara = function (d) {
+        layui.use(['reqajax', 'form', 'laydate'], function () {
+            var $ = layui.$
+                , reqajax = layui.reqajax
+                , form = layui.form
+                , laydate = layui.laydate;
+            form.render();
+            laydate.render({
+                elem: '#date'
+                , trigger: 'click'
+            });
+            form.on('submit(addRole)', function (data) {
+                reqajax.ajaxFun({
+                    url: '/roles'
+                    , data: JSON.stringify(data.field)
+                    , success: function (res) {
+                        if (res.succeed) {
+                            layer.msg('新增成功！', {
+                                icon: 1, time: 1000, end: function () {
+                                    layer.close(d.params.index); //执行关闭
+                                }
+                            });
+                        } else {
+                            layer.msg('新增失败！', {icon: 2, time: 1000});
+                        }
+                    }
+                })
+                return false;
+            });
+        })
+    }
+
+</script>
+

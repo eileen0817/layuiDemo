@@ -1,0 +1,188 @@
+<title>字典管理</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">系统管理</a>
+        <a><cite>字典管理</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid page-container">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md4">
+            <div class="layui-card">
+                <div class="layui-card-header">字典导航</div>
+                <div id="dic_nav_list" class="demo-tree"></div>
+            </div>
+
+        </div>
+        <div class="layui-col-md8">
+            <div class="layui-card">
+                <div class="layui-card-header">字典操作</div>
+                <div class="layui-btn-group test-table-operate-btn" style="margin-top: 15px;">
+                    <button class="layui-btn" data-method="addNewDict" id="add_dict_btn" data-pid="root">新增</button>
+                </div>
+                <table class="layui-table" id="dict_table">
+
+                </table>
+                <div id="dict_page_box">
+                    共<span id="dict_count"></span>条结果
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script type="text/html" id="dictList">
+    <thead>
+    <tr>
+        <th>序号</th>
+        <th>编码</th>
+        <th>名称</th>
+        <th>值</th>
+        <th>描述</th>
+        <th>操作</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{# layui.each(d.listData, function(index, item){ }}
+    <tr>
+        <td class="td-center">{{item.sort}}</td>
+        <td class="td-center">{{item.code}}</td>
+        <td class="td-center">{{item.name}}</td>
+        <td class="td-center">{{# if(item.content !=null){ }} {{item.content}}
+            {{# } else{ }} 暂无 {{# } }}
+        </td>
+        <td>{{# if(item.remark !=null){ }} {{item.remark}}
+            {{# } else{ }} 暂无 {{# } }}
+        </td>
+        <td class="td-center">
+            <a href='javascript:void(0);' class="layui-btn layui-btn-xs" data-id="{{item.id}}" data-pid="{{d.pid}}"
+               data-method="editDict">编辑</a>
+            <a href='javascript:void(0);' class="layui-btn layui-btn-xs layui-btn-danger" data-id="{{item.id}}"
+               data-method="delDict">删除</a>
+        </td>
+    </tr>
+    {{# }); }}
+    {{# if(d.listData.length === 0){ }}
+    <tr class="nodata-tr">
+        <td colspan="6">
+            <div class="nodata-box">
+                <img src="../src/images/no-data.png" alt="">
+                <p>暂无数据</p>
+            </div>
+        </td>
+    </tr>
+    {{# } }}
+
+    </tbody>
+</script>
+<script>
+    layui.use(['admin', 'jquery', 'index', 'laytpl', 'laypage', 'reqajax', 'tree', 'func'], function () {
+        var $ = layui.$
+            , setter = layui.setter
+            , laytpl = layui.laytpl
+            , laypage = layui.laypage
+            , reqajax = layui.reqajax
+            , admin = layui.admin
+            , view = layui.view
+            , tree = layui.tree
+            , func = layui.func;
+        //资源列表渲染模板元素
+        var getTpl = document.getElementById('dictList').innerHTML, view_tpl = document.getElementById('dict_table'),
+            dictData = {};
+        $("#dict_page_box").hide()
+        loadTree()
+
+        //展示字典菜单树及其列表
+        function loadTree() {
+            reqajax.ajaxFun({
+                method: 'get'
+                , url: '/dicts'
+                , success: function (res) {
+                    var jsonDataTree = func.transData(res.data, 'id', 'pid', 'children', 3);
+                    tree.render({
+                        elem: '#dic_nav_list'
+                        , data: jsonDataTree
+                        , onlyIconControl: true  //是否仅允许节点左侧图标控制展开收缩
+                        , click: function (obj) {
+                            dictData = {
+                                listData: obj.data.children,
+                                pid: obj.data.id
+                            }
+                            $("#add_dict_btn").attr('data-pid', obj.data.id)
+                            if (obj.data.children) {
+                                laytpl(getTpl).render(dictData, function (html) {
+                                    view_tpl.innerHTML = html;
+                                });
+                                $("#dict_page_box").show()
+                                //显示总条数
+                                $("#dict_count").text(obj.data.children.length)
+                            } else {
+                                dictData.listData = []
+                                laytpl(getTpl).render(dictData, function (html) {
+                                    view_tpl.innerHTML = html;
+                                });
+                                $("#dict_page_box").hide()
+                            }
+                        }
+                    });
+                }
+            })
+        }
+
+        //资源管理操作
+        var active = {
+            editDict: function (data) {
+                location.hash = "/dict/editDict/id=" + data.id + "/pid=" + data.pid
+            }
+            , addNewDict: function (data) {
+                location.hash = "/dict/addDict/pid=" + data.pid
+            }
+            , delDict: function (data) {
+                layer.confirm('你确定要删除该字典吗？', function (index) {
+                    reqajax.ajaxFun({
+                        method: 'delete'
+                        , url: '/dicts/' + data.id
+                        , success: function (res) {
+                            if (res.succeed) {
+                                dictData.listData = deleteItem(data.id, dictData.listData)
+                                laytpl(getTpl).render(dictData, function (html) {
+                                    view_tpl.innerHTML = html;
+                                });
+                                $("#page_box").show()
+                                //显示总条数
+                                $("#dict_count").text(dictData.listData.length)
+                                loadTree()
+                                layer.msg(res.msg)
+
+                            } else {
+                                layer.msg(res.msg)
+                            }
+                        }
+                    })
+                });
+
+            }
+        }
+
+        //删除表格中对应数据前端操作
+        function deleteItem(item, list) {
+            for (var key in list) {
+                if (list[key].id === item) {
+                    list.splice(key, 1)
+                }
+            }
+            return list;
+        }
+
+        //操作按钮点击事件绑定
+        $('.layui-card').on('click', '.layui-btn', function () {
+            var othis = $(this), method = othis.data('method');
+            active[method] ? active[method].call(this, othis.data()) : '';
+        });
+
+    })
+
+</script>

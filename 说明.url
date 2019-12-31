@@ -1,0 +1,13 @@
+此系统基于layui实现前后端分离的demo演示项目，基于业务引用部分ui组件。
+其中关于树的展示，除去基于lay-tree完成以外新增基于ztree进行资源的操作。
+以下是关于框架的相关文件说明：
+    layui-demo\gulpfile.js：压缩文件配置，压缩完成后,src为本地运行文件，dist为压缩后产生的文件，可供线上使用
+    layui-demo\src\config.js：全局配置文件，配置基本请求路径及主题配置等字段
+    layui-demo\src\index.js：入口js
+    layui-demo\src\lib\admin.js：系统外框架事件（例如全屏化页面、tab页签切换等）
+    layui-demo\src\lib\view.js：系统页面视图相关js
+    layui-demo\src\views\*:页面文件
+    layui-demo\src\views\style：系统样式表
+    layui-demo\src\views\lib：引用第三方文件
+    layui-demo\src\views\images：图片资源
+    layui-demo\src\views\controller：公用js

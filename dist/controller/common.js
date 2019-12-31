@@ -1,0 +1,2 @@
+/** layui-demo-v1.0.0 ISC License By  */
+ ;layui.define(function(e){layui.$,layui.layer,layui.laytpl,layui.setter,layui.view;var a=layui.admin;a.events.logout=function(){a.req({url:layui.setter.dataInterface+"/users/logout/"+layui.data(layui.setter.tableName)[layui.setter.request.tokenName],headers:{Authorization:layui.data(layui.setter.tableName)[layui.setter.request.tokenName]},type:"get",data:{},done:function(){a.exit()}})},e("common",{})});

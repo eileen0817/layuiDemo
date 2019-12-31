@@ -1,0 +1,80 @@
+<div class="layui-fluid  pop-win no-padding">
+    <div class="layui-card no-padding">
+        <div class="layui-card-body no-padding">
+            <form class="layui-form" method="post" action="" lay-filter="form-bind-resource">
+                <script type="text/html" template lay-done="layui.data.sendPara(d)">
+                    <input type="hidden" name="role_id" value={{d.params.id}}>
+                </script>
+                <div id="res_tree" class="demo-tree-more"></div>
+                <div class="form-btn-box">
+                    <button class="layui-btn" lay-submit="" lay-filter="bindResource">提交</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    layui.data.sendPara = function (d) {
+        layui.use(['reqajax', 'form', 'tree', 'func'], function () {
+            var $ = layui.$
+                , reqajax = layui.reqajax
+                , tree = layui.tree
+                , form = layui.form
+                , func = layui.func;
+            form.render();
+
+            //获取角色获取绑定资源
+            reqajax.ajaxFun({
+                method: 'get'
+                , url: '/roles/' + d.params.id + '/resources'
+                , success: function (res) {
+                    var jsonDataTree = func.transData(res.data, 'id', 'pid', 'children', 1);
+                    tree.render({
+                        elem: '#res_tree'
+                        , data: jsonDataTree
+                        , showCheckbox: true  //是否显示复选框
+                        , id: 'resourceTree'
+                        , isJump: true //是否允许点击节点时弹出新窗口跳转
+                    });
+                }
+            })
+
+            //为角色绑定资源
+            form.on('submit(bindResource)', function (data) {
+                    var checkedData = tree.getChecked('resourceTree'); //获取选中节点的数据
+                    var dataArr = func.transTree(checkedData)
+                    var bindResourceObj = {
+                        role_id: data.field.role_id,
+                        res_ids: dataArr.join(',')
+                    }
+                    //授权 （用户绑定角色）
+                    reqajax.ajaxFun({
+                        url: '/roles/bind'
+                        , conType: 'application/x-www-form-urlencoded'
+                        , data: bindResourceObj
+                        , success: function (res) {
+                            if (res.succeed) {
+                                layer.msg('绑定成功！', {
+                                    icon: 1, time: 1000, end: function () {
+                                        layer.close(d.params.index); //执行关闭
+                                    }
+                                });
+                            } else {
+                                layer.msg('绑定失败！', {icon: 2, time: 1000});
+                            }
+                        }
+                    })
+                    return false;
+
+                }
+            );
+
+
+
+
+        })
+    }
+
+</script>
+

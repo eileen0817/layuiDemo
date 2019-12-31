@@ -1,0 +1,161 @@
+<title>字典编辑</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">系统管理</a>
+        <a><cite>字典管理</cite></a>
+        <a><cite>字典编辑</cite></a>
+    </div>
+</div>
+<div class="layui-fluid  pop-win">
+    <div class="layui-card   ">
+        <div class="layui-card-header">字典编辑</div>
+        <div class="layui-card-body  ">
+            <form class="layui-form" method="post" action="" lay-filter="form-add-role">
+                <div class="layui-form-item">
+                    <label class="layui-form-label">父节点</label>
+                    <div class="layui-input-block">
+                        <input type="hidden" name="id">
+                        <p id="dict_edit_name"></p>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label"><span class="font-red">*</span>名称</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="name" autocomplete="off" placeholder="请输入编码"
+                               class="layui-input">
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label"><span class="font-red">*</span>编码</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="code" lay-verify="required" autocomplete="off"
+                               placeholder="请输入编码"
+                               class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label"><span class="font-red">*</span>值</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="content" lay-verify="required" autocomplete="off"
+                               placeholder="请输入值"
+                               class="layui-input">
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">序号</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="sort" lay-verify="required|number" autocomplete="off"
+                               placeholder="请输入序号"
+                               class="layui-input">
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">描述</label>
+                    <div class="layui-input-block">
+                        <textarea name="remark" autocomplete="off" placeholder="请输入描述"
+                                  class="layui-textarea"></textarea>
+                    </div>
+                </div>
+                <div class="layui-footer">
+                    <button class="layui-btn" lay-submit="" lay-filter="editDict">提交</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script type="text/html" id="iconList">
+    {{# layui.each(d.iconList, function(index, item){
+    if(d.showIcon==item){
+    }}
+
+    <li data-name="{{item}}" class="on">
+        <div>
+            <i class="iconfont {{item}}"></i>
+        </div>
+    </li>
+    {{#  }else{
+    }}
+    <li data-name="{{item}}">
+        <div>
+            <i class="iconfont {{item}}"></i>
+        </div>
+    </li>
+    {{# }
+    }); }}
+</script>
+<script>
+
+    layui.use(['admin', 'reqajax', 'laytpl', 'form'], function () {
+        var $ = layui.$
+            , admin = layui.admin
+            , laytpl = layui.laytpl
+            , reqajax = layui.reqajax
+            , form = layui.form;
+        form.render();
+        var tplData = {
+            iconList: ['icon-set', 'icon-edit', 'icon-password', 'icon-link', 'icon-data', 'icon-notice', 'icon-book', 'icon-homesolid', 'icon-home1', 'icon-edit1', 'icon-notices', 'icon-noticesolid', 'icon-user', 'icon-unusual', 'icon-functionsolid', 'icon-flow', 'icon-home', 'icon-database', 'icon-setting', 'icon-flowset', 'icon-coumputer', 'icon-filesearch', 'icon-computersolid', 'icon-tablesolid', 'icon-trend', 'icon-usersettings', 'icon-edit2', 'icon-flowaround', 'icon-statisticsolid', 'icon-usersolid', 'icon-statistics2', 'icon-notice1', 'icon-user2', 'icon-excesolid', 'icon-function', 'icon-link1', 'icon-pass', 'icon-exception', 'icon-statistics', 'icon-table'],
+            showIcon: ''
+        }
+        var dict_id = layui.router().search.id, res_pid = layui.router().search.pid;
+        reqajax.ajaxFun({
+            method: 'get'
+            , url: '/dicts/' + dict_id
+            , success: function (res) {
+                var obj = res.data
+                for (var key in obj) {
+                    $("input[name='" + key + "']").val(obj[key])
+                }
+                form.render()
+            }
+        })
+        if (res_pid == "root") {
+            $("#dict_edit_name").text('根目录')
+        } else {
+            reqajax.ajaxFun({
+                method: 'get'
+                , url: '/resources/' + res_pid
+                , success: function (res) {
+                    $("#dict_edit_name").text(res.data.title)
+                }
+            })
+        }
+
+        $(".icon-list").on('click', 'li', function () {
+            if ($(this).hasClass("on")) {
+                $(this).removeClass("on");
+                tplData.showIcon = "";
+            } else {
+                $(this).addClass("on").siblings("li").removeClass("on");
+                tplData.showIcon = $(this).attr("data-name");
+            }
+        })
+        form.on('submit(editDict)', function (data) {
+            data.field.icon = tplData.showIcon;
+            reqajax.ajaxFun({
+                method: 'put'
+                , url: '/dicts'
+                , data: JSON.stringify(data.field)
+                , success: function (res) {
+                    if (res.succeed) {
+                        layer.msg('修改成功！', {
+                            icon: 1, time: 1000, end: function () {
+                                admin.events.closeThisTabs();
+                            }
+                        });
+
+                    } else {
+                        layer.msg('修改失败！', {icon: 2, time: 1000});
+                    }
+                }
+            })
+            return false;
+        });
+    })
+
+
+</script>
+

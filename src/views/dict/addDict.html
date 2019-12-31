@@ -1,0 +1,120 @@
+<title>新增字典</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">系统管理</a>
+        <a><cite>字典管理</cite></a>
+        <a><cite>新增字典</cite></a>
+    </div>
+</div>
+<div class="layui-fluid  pop-win">
+    <div class="layui-card   ">
+        <div class="layui-card-header">新增字典</div>
+        <div class="layui-card-body  ">
+            <form class="layui-form" method="post" action="" lay-filter="form-add-dist">
+                <div class="layui-form-item">
+                    <label class="layui-form-label">父节点</label>
+                    <div class="layui-input-block">
+                        <input id="dict_pid" type="hidden" name="pid">
+                        <p id="dict_add_name"></p>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label"><span class="font-red">*</span>名称</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="name"  autocomplete="off" placeholder="请输入编码"
+                               class="layui-input">
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label"><span class="font-red">*</span>编码</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="code" lay-verify="required" autocomplete="off"
+                               placeholder="请输入编码"
+                               class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label"><span class="font-red">*</span>值</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="content" lay-verify="required" autocomplete="off"
+                               placeholder="请输入值"
+                               class="layui-input">
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">序号</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="sort" lay-verify="required|number" autocomplete="off"
+                               placeholder="请输入序号"
+                               class="layui-input">
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">描述</label>
+                    <div class="layui-input-block">
+                        <textarea name="remark" autocomplete="off" placeholder="请输入描述" class="layui-textarea"></textarea>
+                    </div>
+                </div>
+
+                <div class="layui-footer">
+                    <button class="layui-btn" lay-submit="" lay-filter="addDict">提交</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    layui.use(['admin', 'reqajax', 'laytpl', 'form'], function () {
+        var $ = layui.$
+            , admin = layui.admin
+            , laytpl = layui.laytpl
+            , reqajax = layui.reqajax
+            , form = layui.form;
+        form.render();
+
+        var dict_pid = layui.router().search.pid;
+        $("#dict_pid").val(dict_pid)
+
+        //显示父节点名称
+        if (dict_pid == "root") {
+            $("#dict_add_name").text('根目录')
+        } else {
+            reqajax.ajaxFun({
+                method: 'get'
+                , url: '/dicts/' + dict_pid
+                , success: function (res) {
+                    $("#dict_add_name").text(res.data.name)
+                }
+            })
+        }
+
+
+        form.on('submit(addDict)', function (data) {
+            reqajax.ajaxFun({
+                url: '/dicts'
+                , data: JSON.stringify(data.field)
+                , success: function (res) {
+                    if (res.succeed) {
+                        layer.msg('新增成功！', {
+                            icon: 1, time: 1000, end: function () {
+                                admin.events.closeThisTabs();
+                            }
+                        });
+                    } else {
+                        layer.msg('新增失败！', {icon: 2, time: 1000});
+                    }
+                }
+            })
+            return false;
+        });
+    })
+
+
+</script>
+
